@@ -48,4 +48,28 @@ class GuestLoginRouteTest {
 
         assertEquals(HttpStatusCode.BadRequest, response.status)
     }
+
+    @Test
+    fun `guest login rejects malformed JSON`() = testApplication {
+        application { module() }
+
+        val response = client.post("/api/auth/guest") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody("{invalid-json")
+        }
+
+        assertEquals(HttpStatusCode.BadRequest, response.status)
+    }
+
+    @Test
+    fun `guest login rejects missing display name`() = testApplication {
+        application { module() }
+
+        val response = client.post("/api/auth/guest") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody("{}")
+        }
+
+        assertEquals(HttpStatusCode.BadRequest, response.status)
+    }
 }
