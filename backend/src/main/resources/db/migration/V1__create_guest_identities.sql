@@ -1,0 +1,5 @@
+CREATE TABLE guest_identities (
+    id UUID PRIMARY KEY,
+    display_name VARCHAR(64) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

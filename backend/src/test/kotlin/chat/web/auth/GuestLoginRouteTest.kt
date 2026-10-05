@@ -1,6 +1,8 @@
 package chat.web.auth
 
-import chat.web.module
+import chat.web.configureHttpModule
+import chat.web.auth.GuestIdentityRepository
+import chat.web.auth.InMemoryGuestIdentityRepository
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -23,7 +25,7 @@ private fun String.guestPayload(): GuestIdentityPayload = Json.decodeFromString(
 class GuestLoginRouteTest {
     @Test
     fun `guest login issues an anonymous identity`() = testApplication {
-        application { module() }
+        application { configureHttpModule(InMemoryGuestIdentityRepository()) }
 
         val response = client.post("/api/auth/guest") {
             header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
@@ -39,7 +41,7 @@ class GuestLoginRouteTest {
 
     @Test
     fun `guest login rejects blank display name`() = testApplication {
-        application { module() }
+        application { configureHttpModule(InMemoryGuestIdentityRepository()) }
 
         val response = client.post("/api/auth/guest") {
             header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
@@ -51,7 +53,7 @@ class GuestLoginRouteTest {
 
     @Test
     fun `guest login rejects malformed JSON`() = testApplication {
-        application { module() }
+        application { configureHttpModule(InMemoryGuestIdentityRepository()) }
 
         val response = client.post("/api/auth/guest") {
             header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
@@ -63,7 +65,7 @@ class GuestLoginRouteTest {
 
     @Test
     fun `guest login rejects missing display name`() = testApplication {
-        application { module() }
+        application { configureHttpModule(InMemoryGuestIdentityRepository()) }
 
         val response = client.post("/api/auth/guest") {
             header(HttpHeaders.ContentType, ContentType.Application.Json.toString())

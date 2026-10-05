@@ -21,13 +21,31 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
     implementation("io.ktor:ktor-server-call-logging-jvm:$ktorVersion")
     implementation("ch.qos.logback:logback-classic:1.5.18")
+    implementation("org.postgresql:postgresql:42.7.7")
+    implementation("org.flywaydb:flyway-core:11.13.0")
+    runtimeOnly("org.flywaydb:flyway-database-postgresql:11.13.0")
 
     testImplementation(kotlin("test"))
     testImplementation("io.ktor:ktor-server-test-host-jvm:$ktorVersion")
     testImplementation("io.ktor:ktor-client-content-negotiation-jvm:$ktorVersion")
     testImplementation("org.junit.jupiter:junit-jupiter:5.12.2")
+    testImplementation("org.testcontainers:postgresql:1.21.3")
+    testImplementation("org.testcontainers:junit-jupiter:1.21.3")
 }
 
 tasks.test {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        excludeTags("integration")
+    }
+}
+
+tasks.register<Test>("integrationTest") {
+    description = "Runs PostgreSQL integration tests (requires a configured database)."
+    group = "verification"
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    useJUnitPlatform {
+        includeTags("integration")
+    }
+    shouldRunAfter(tasks.test)
 }
