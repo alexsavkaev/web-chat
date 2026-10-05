@@ -2,6 +2,7 @@ package chat.web
 
 import chat.web.auth.GuestIdentity
 import chat.web.auth.GuestIdentityService
+import chat.web.auth.InMemoryGuestIdentityRepository
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
@@ -21,7 +22,7 @@ fun Application.module() {
     install(ContentNegotiation) {
         json(Json { ignoreUnknownKeys = true })
     }
-    val guestIdentityService = GuestIdentityService()
+    val guestIdentityService = GuestIdentityService(InMemoryGuestIdentityRepository())
     routing {
         get("/health") {
             call.respond(mapOf("status" to "ok"))
@@ -46,6 +47,6 @@ fun Application.module() {
 data class GuestLoginRequest(val displayName: String)
 
 @Serializable
-data class GuestIdentityResponse(val id: String, val displayName: String, val kind: String = "guest")
+data class GuestIdentityResponse(val id: String, val displayName: String, val kind: String)
 
-private fun GuestIdentity.toResponse() = GuestIdentityResponse(id, displayName)
+private fun GuestIdentity.toResponse() = GuestIdentityResponse(id, displayName, "guest")

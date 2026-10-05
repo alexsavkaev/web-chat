@@ -11,7 +11,14 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.testing.testApplication
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+
+@Serializable
+data class GuestIdentityPayload(val id: String, val displayName: String, val kind: String)
+
+private fun String.guestPayload(): GuestIdentityPayload = Json.decodeFromString(this)
+
 
 class GuestLoginRouteTest {
     @Test
@@ -24,8 +31,10 @@ class GuestLoginRouteTest {
         }
 
         assertEquals(HttpStatusCode.Created, response.status)
-        assertTrue(response.bodyAsText().contains("\"displayName\":\"Fox\""))
-        assertTrue(response.bodyAsText().contains("\"id\":"))
+        val payload = response.bodyAsText().guestPayload()
+        assertEquals("Fox", payload.displayName)
+        assertEquals("guest", payload.kind)
+        assertEquals(36, payload.id.length)
     }
 
     @Test

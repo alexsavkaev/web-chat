@@ -7,14 +7,20 @@ A new web chat project implemented from the OpenSpec contract in this repository
 - Kotlin + Ktor backend, organized as a modular monolith
 - PostgreSQL (persistence setup is the next foundation task)
 - TypeScript + Vite + Web Components frontend
-- WebSocket realtime transport
+- WebSocket realtime transport will be added with the realtime implementation
 
 ## Backend: local development
 
-Requires JDK 21. Use the Gradle wrapper once it is generated, or run Gradle 9.7+ from the repository root:
+Requires JDK 21. The repository includes a Gradle Wrapper for reproducible builds:
 
 ```sh
-gradle :backend:run
+./gradlew :backend:run
+```
+
+On Windows:
+
+```bat
+gradlew.bat :backend:run
 ```
 
 The server listens on `http://localhost:8080` (override with `PORT`).
@@ -25,10 +31,12 @@ The server listens on `http://localhost:8080` (override with `PORT`).
 Run the backend tests with:
 
 ```sh
-gradle :backend:test
+./gradlew :backend:test
 ```
 
-## Frontend
+## Architecture notes
+
+The auth module exposes `GuestIdentityRepository` as its persistence boundary. The current `InMemoryGuestIdentityRepository` is deliberately a temporary adapter for the bootstrap slice; PostgreSQL persistence must be introduced behind this contract in the foundation work.
 
 The `frontend/` workspace will contain the Vite/Web Components application. The initial client will be bootstrapped after persistence and API contracts are established.
 

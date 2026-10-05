@@ -6,7 +6,7 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 class GuestIdentityServiceTest {
-    private val service = GuestIdentityService()
+    private val service = GuestIdentityService(InMemoryGuestIdentityRepository())
 
     @Test
     fun `guest identity trims and validates requested display name`() {
