@@ -1,17 +1,45 @@
-# web-chat
+# Web Chat
 
-OpenSpec-driven web chat project.
+A new web chat project implemented from the OpenSpec contract in this repository. It is independent from the existing `chat` project.
 
-## Status
+## Stack
 
-The repository is being prepared as the implementation workspace for the initial web-chat change.
+- Kotlin + Ktor backend, organized as a modular monolith
+- PostgreSQL (persistence setup is the next foundation task)
+- TypeScript + Vite + Web Components frontend
+- WebSocket realtime transport will be added with the realtime implementation
 
-## Architecture
+## Backend: local development
 
-- Backend: Kotlin + Ktor
-- Backend style: modular monolith
-- Database: PostgreSQL
-- Frontend: TypeScript + Vite + Web Components
-- Realtime transport: WebSocket
+Requires JDK 21. The repository includes a Gradle Wrapper for reproducible builds:
 
-See `openspec/project.md` and `openspec/changes/initial-web-chat/` for the implementation contract and task plan.
+```sh
+./gradlew :backend:run
+```
+
+On Windows:
+
+```bat
+gradlew.bat :backend:run
+```
+
+The server listens on `http://localhost:8080` (override with `PORT`).
+
+- `GET /health` — health probe
+- `POST /api/auth/guest` with `{"displayName":"Fox"}` — create an anonymous guest identity
+
+Run the backend tests with:
+
+```sh
+./gradlew :backend:test
+```
+
+## Architecture notes
+
+The auth module exposes `GuestIdentityRepository` as its persistence boundary. The current `InMemoryGuestIdentityRepository` is deliberately a temporary adapter for the bootstrap slice; PostgreSQL persistence must be introduced behind this contract in the foundation work.
+
+The `frontend/` workspace will contain the Vite/Web Components application. The initial client will be bootstrapped after persistence and API contracts are established.
+
+## Specification workflow
+
+`openspec/project.md` and `openspec/changes/initial-web-chat/` define the project architecture, behavior and implementation sequence. Update those artifacts when implementation decisions materially change the contract.
