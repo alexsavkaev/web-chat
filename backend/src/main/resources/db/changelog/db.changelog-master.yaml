@@ -17,3 +17,14 @@ databaseChangeLog:
             sql: "DROP TABLE IF EXISTS webchat.guest_identities"
         - sql:
             sql: "DROP SCHEMA IF EXISTS webchat"
+  - changeSet:
+      id: 2-place-changelog-lock-in-webchat
+      author: web-chat
+      changes:
+        - sql:
+            sql: "CREATE TABLE IF NOT EXISTS webchat.databasechangeloglock (id INTEGER PRIMARY KEY, locked BOOLEAN NOT NULL, lockgranted TIMESTAMP, lockedby VARCHAR(255))"
+        - sql:
+            sql: "INSERT INTO webchat.databasechangeloglock (id, locked) VALUES (1, FALSE) ON CONFLICT (id) DO NOTHING"
+      rollback:
+        - sql:
+            sql: "DROP TABLE IF EXISTS webchat.databasechangeloglock"

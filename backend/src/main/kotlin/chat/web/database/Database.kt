@@ -28,7 +28,6 @@ fun createDataSource(settings: DatabaseSettings): DataSource = PGSimpleDataSourc
 fun migrateDatabase(dataSource: DataSource) {
     dataSource.connection.use { connection ->
         val database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(JdbcConnection(connection))
-        database.defaultSchemaName = "webchat"
         Liquibase("db/changelog/db.changelog-master.yaml", ClassLoaderResourceAccessor(), database).update("")
     }
 }

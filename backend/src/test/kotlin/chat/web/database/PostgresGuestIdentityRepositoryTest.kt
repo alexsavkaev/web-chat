@@ -29,6 +29,9 @@ class PostgresGuestIdentityRepositoryTest {
                 statement.executeQuery("SELECT to_regclass('webchat.guest_identities') IS NOT NULL").use { result ->
                     assertTrue(result.next() && result.getBoolean(1))
                 }
+                statement.executeQuery("SELECT COUNT(*) FROM webchat.databasechangeloglock").use { result ->
+                    assertTrue(result.next() && result.getInt(1) == 1)
+                }
             }
         }
     }
@@ -37,10 +40,13 @@ class PostgresGuestIdentityRepositoryTest {
     fun `Liquibase does not reapply changeset on subsequent run`() {
         val source = dataSource()
         migrateDatabase(source)
-        val executedChangesets = countChangesets(source)
+        val changesetsBefore = countChangesets(source)
+        val lockRowsBefore = countLockRows(source)
         migrateDatabase(source)
-        assertEquals(1, executedChangesets)
-        assertEquals(executedChangesets, countChangesets(source))
+        assertEquals(1, changesetsBefore)
+        assertEquals(changesetsBefore, countChangesets(source))
+        assertEquals(1, lockRowsBefore)
+        assertEquals(lockRowsBefore, countLockRows(source))
     }
 
     @Test
@@ -61,7 +67,16 @@ class PostgresGuestIdentityRepositoryTest {
 
     private fun countChangesets(source: PGSimpleDataSource): Int = source.connection.use { connection ->
         connection.createStatement().use { statement ->
-            statement.executeQuery("SELECT COUNT(*) FROM webchat.DATABASECHANGELOG").use { result ->
+            statement.executeQuery("SELECT COUNT(*) FROM webchat.DATABASECHANGELOG WHERE ID = '1-create-guest-identities'").use { result ->
+                result.next()
+                result.getInt(1)
+            }
+        }
+    }
+
+    private fun countLockRows(source: PGSimpleDataSource): Int = source.connection.use { connection ->
+        connection.createStatement().use { statement ->
+            statement.executeQuery("SELECT COUNT(*) FROM webchat.DATABASECHANGELOGLOCK").use { result ->
                 result.next()
                 result.getInt(1)
             }
