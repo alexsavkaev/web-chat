@@ -2,11 +2,10 @@ package chat.web
 
 import chat.web.auth.GuestIdentityRepository
 import chat.web.auth.GuestIdentityService
+import chat.web.database.migrateDatabase
 import chat.web.database.PostgresGuestIdentityRepository
 import chat.web.database.createDataSource
 import chat.web.database.databaseSettings
-import chat.web.database.jdbcConnectionFactory
-import chat.web.database.migrateDatabase
 
 /** Application composition root. Replace adapters here without coupling routes to storage. */
 data class ApplicationDependencies(
@@ -22,7 +21,7 @@ fun configureDependencies(
         val settings = databaseSettings(environment)
         val dataSource = createDataSource(settings)
         migrateDatabase(dataSource)
-        PostgresGuestIdentityRepository(jdbcConnectionFactory(settings)::open)
+        PostgresGuestIdentityRepository(dataSource)
     }
     return ApplicationDependencies(
         guestIdentityRepository = repository,

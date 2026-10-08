@@ -1,9 +1,10 @@
 package chat.web.database
 
-import java.sql.Connection
-import java.sql.DriverManager
 import javax.sql.DataSource
-import org.flywaydb.core.Flyway
+import liquibase.Liquibase
+import liquibase.database.DatabaseFactory
+import liquibase.database.jvm.JdbcConnection
+import liquibase.resource.ClassLoaderResourceAccessor
 import org.postgresql.ds.PGSimpleDataSource
 
 data class DatabaseSettings(
@@ -24,20 +25,10 @@ fun createDataSource(settings: DatabaseSettings): DataSource = PGSimpleDataSourc
     password = settings.password
 }
 
-fun interface SqlConnectionFactory {
-    fun open(): Connection
-}
-
-fun jdbcConnectionFactory(settings: DatabaseSettings): SqlConnectionFactory = SqlConnectionFactory {
-    DriverManager.getConnection(settings.jdbcUrl, settings.username, settings.password)
-}
-
 fun migrateDatabase(dataSource: DataSource) {
-    Flyway.configure()
-        .dataSource(dataSource)
-        .schemas("webchat")
-        .defaultSchema("webchat")
-        .locations("classpath:db/migration")
-        .load()
-        .migrate()
+    dataSource.connection.use { connection ->
+        val database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(JdbcConnection(connection))
+        database.defaultSchemaName = "webchat"
+        Liquibase("db/changelog/db.changelog-master.yaml", ClassLoaderResourceAccessor(), database).update("")
+    }
 }

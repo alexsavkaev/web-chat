@@ -22,8 +22,8 @@ dependencies {
     implementation("io.ktor:ktor-server-call-logging-jvm:$ktorVersion")
     implementation("ch.qos.logback:logback-classic:1.5.18")
     implementation("org.postgresql:postgresql:42.7.7")
-    implementation("org.flywaydb:flyway-core:11.13.0")
-    runtimeOnly("org.flywaydb:flyway-database-postgresql:11.13.0")
+    implementation("org.liquibase:liquibase-core:4.33.0")
+    runtimeOnly("org.liquibase.ext:liquibase-postgresql:4.33.0")
 
     testImplementation(kotlin("test"))
     testImplementation("io.ktor:ktor-server-test-host-jvm:$ktorVersion")

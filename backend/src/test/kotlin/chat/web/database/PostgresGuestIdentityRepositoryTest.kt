@@ -5,78 +5,75 @@ import java.util.UUID
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.postgresql.ds.PGSimpleDataSource
+import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.junit.jupiter.Container
+import org.testcontainers.junit.jupiter.Testcontainers
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 @Tag("integration")
+@Testcontainers
 class PostgresGuestIdentityRepositoryTest {
-    private val dataSource = PGSimpleDataSource().apply {
-        setURL(System.getenv("DATABASE_URL") ?: "jdbc:postgresql://localhost:5432/chatdb_test")
-        user = System.getenv("DATABASE_USER") ?: "chat"
-        password = System.getenv("DATABASE_PASSWORD") ?: "chat"
+    private fun dataSource(): PGSimpleDataSource = PGSimpleDataSource().apply {
+        setURL(postgres.getJdbcUrl())
+        user = postgres.getUsername()
+        password = postgres.getPassword()
     }
 
     @Test
-    fun `save persists guest identity in postgres`() {
-        migrateDatabase(dataSource)
-        val repository = PostgresGuestIdentityRepository(dataSource::getConnection)
-        val identity = GuestIdentity(UUID.randomUUID().toString(), "TestGuest")
+    fun `Liquibase creates schema and table on a fresh PostgreSQL instance`() {
+        val source = dataSource()
+        migrateDatabase(source)
+        source.connection.use { connection ->
+            connection.createStatement().use { statement ->
+                statement.executeQuery("SELECT to_regclass('webchat.guest_identities') IS NOT NULL").use { result ->
+                    assertTrue(result.next() && result.getBoolean(1))
+                }
+            }
+        }
+    }
 
+    @Test
+    fun `Liquibase does not reapply changeset on subsequent run`() {
+        val source = dataSource()
+        migrateDatabase(source)
+        val executedChangesets = countChangesets(source)
+        migrateDatabase(source)
+        assertEquals(1, executedChangesets)
+        assertEquals(executedChangesets, countChangesets(source))
+    }
+
+    @Test
+    fun `repository persists guest identity in PostgreSQL`() {
+        val source = dataSource()
+        migrateDatabase(source)
+        val repository = PostgresGuestIdentityRepository(source)
+        val identity = GuestIdentity(UUID.randomUUID().toString(), "TestGuest")
         repository.save(identity)
-        val persistedName = dataSource.connection.use { connection ->
+        val persistedName = source.connection.use { connection ->
             connection.prepareStatement("SELECT display_name FROM webchat.guest_identities WHERE id = ?").use { statement ->
                 statement.setObject(1, UUID.fromString(identity.id))
-                statement.executeQuery().use { result ->
-                    if (result.next()) result.getString("display_name") else null
-                }
+                statement.executeQuery().use { result -> if (result.next()) result.getString("display_name") else null }
             }
         }
-
         assertEquals("TestGuest", persistedName)
-        dataSource.connection.use { connection ->
-            connection.prepareStatement("DELETE FROM webchat.guest_identities WHERE id = ?").use { statement ->
-                statement.setObject(1, UUID.fromString(identity.id))
-                statement.executeUpdate()
+    }
+
+    private fun countChangesets(source: PGSimpleDataSource): Int = source.connection.use { connection ->
+        connection.createStatement().use { statement ->
+            statement.executeQuery("SELECT COUNT(*) FROM webchat.DATABASECHANGELOG").use { result ->
+                result.next()
+                result.getInt(1)
             }
         }
     }
 
-    @Test
-    fun `migration creates schema and guest identities table on a clean database`() {
-        val schemaName = "webchat_test_${UUID.randomUUID().toString().replace("-", "")}"
-        val baseUrl = System.getenv("DATABASE_URL") ?: "jdbc:postgresql://localhost:5432/chatdb_test"
-        val baseUri = java.net.URI.create(baseUrl.removePrefix("jdbc:"))
-        val hostPort = if (baseUri.port >= 0) "${baseUri.host}:${baseUri.port}" else baseUri.host
-        val adminUrl = "jdbc:postgresql://$hostPort/postgres${baseUri.rawQuery?.let { "?$it" } ?: ""}"
-        val schemaDataSource = PGSimpleDataSource().apply {
-            setURL(adminUrl)
-            user = System.getenv("DATABASE_USER") ?: "chat"
-            password = System.getenv("DATABASE_PASSWORD") ?: "chat"
-        }
-        schemaDataSource.connection.use { connection ->
-            connection.createStatement().use { it.execute("CREATE DATABASE \"$schemaName\"") }
-        }
-
-        try {
-            val cleanDataSource = PGSimpleDataSource().apply {
-                setURL(System.getenv("DATABASE_URL")?.replace("chatdb_test", schemaName)
-                    ?: "jdbc:postgresql://localhost:5432/$schemaName")
-                user = System.getenv("DATABASE_USER") ?: "chat"
-                password = System.getenv("DATABASE_PASSWORD") ?: "chat"
-            }
-            migrateDatabase(cleanDataSource)
-
-            val exists = cleanDataSource.connection.use { connection ->
-                connection.prepareStatement("SELECT to_regclass('webchat.guest_identities') IS NOT NULL").use { statement ->
-                    statement.executeQuery().use { result -> result.next() && result.getBoolean(1) }
-                }
-            }
-            assertEquals(true, exists)
-        } finally {
-            schemaDataSource.connection.use { connection ->
-                connection.createStatement().use { statement ->
-                    statement.execute("DROP DATABASE IF EXISTS \"$schemaName\"")
-                }
-            }
+    companion object {
+        @Container
+        @JvmStatic
+        val postgres: PostgreSQLContainer<Nothing> = PostgreSQLContainer<Nothing>("postgres:16-alpine").apply {
+            withDatabaseName("webchat")
+            withPassword("webchat")
         }
     }
 }

@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1-create-guest-identities
+      author: web-chat
+      changes:
+        - sql:
+            sql: CREATE SCHEMA IF NOT EXISTS webchat
+        - sql:
+            sql: |
+              CREATE TABLE webchat.guest_identities (
+                id UUID PRIMARY KEY,
+                display_name VARCHAR(64) NOT NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+              );
+      rollback:
+        - sql:
+            sql: "DROP TABLE IF EXISTS webchat.guest_identities"
+        - sql:
+            sql: "DROP SCHEMA IF EXISTS webchat"
