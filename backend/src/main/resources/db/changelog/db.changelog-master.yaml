@@ -15,3 +15,33 @@ databaseChangeLog:
       rollback:
         - sql:
             sql: "DROP TABLE IF EXISTS webchat.guest_identities"
+  - changeSet:
+      id: 2-create-identities-and-sessions
+      author: web-chat
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE webchat.identities (
+                id UUID PRIMARY KEY,
+                email VARCHAR(320) NOT NULL UNIQUE,
+                display_name VARCHAR(64) NOT NULL,
+                password_hash TEXT NOT NULL,
+                role VARCHAR(32) NOT NULL DEFAULT 'USER',
+                created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+              );
+        - sql:
+            sql: |
+              CREATE TABLE webchat.sessions (
+                id UUID PRIMARY KEY,
+                identity_id UUID NOT NULL REFERENCES webchat.identities(id) ON DELETE CASCADE,
+                token_hash CHAR(44) NOT NULL UNIQUE,
+                expires_at TIMESTAMPTZ NOT NULL,
+                revoked_at TIMESTAMPTZ NULL
+              );
+        - sql:
+            sql: "CREATE INDEX sessions_token_hash_idx ON webchat.sessions(token_hash)"
+      rollback:
+        - sql:
+            sql: "DROP TABLE IF EXISTS webchat.sessions"
+        - sql:
+            sql: "DROP TABLE IF EXISTS webchat.identities"
