@@ -25,7 +25,7 @@ private fun String.guestPayload(): GuestIdentityPayload = Json.decodeFromString(
 class GuestLoginRouteTest {
     @Test
     fun `guest login issues an anonymous identity`() = testApplication {
-        application { configureHttpModule(InMemoryGuestIdentityRepository()) }
+        application { configureHttpModule(chat.web.configureDependencies(InMemoryGuestIdentityRepository())) }
 
         val response = client.post("/api/auth/guest") {
             header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
@@ -41,7 +41,7 @@ class GuestLoginRouteTest {
 
     @Test
     fun `guest login rejects blank display name`() = testApplication {
-        application { configureHttpModule(InMemoryGuestIdentityRepository()) }
+        application { configureHttpModule(chat.web.configureDependencies(InMemoryGuestIdentityRepository())) }
 
         val response = client.post("/api/auth/guest") {
             header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
@@ -53,7 +53,7 @@ class GuestLoginRouteTest {
 
     @Test
     fun `guest login rejects malformed JSON`() = testApplication {
-        application { configureHttpModule(InMemoryGuestIdentityRepository()) }
+        application { configureHttpModule(chat.web.configureDependencies(InMemoryGuestIdentityRepository())) }
 
         val response = client.post("/api/auth/guest") {
             header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
@@ -65,7 +65,7 @@ class GuestLoginRouteTest {
 
     @Test
     fun `guest login rejects missing display name`() = testApplication {
-        application { configureHttpModule(InMemoryGuestIdentityRepository()) }
+        application { configureHttpModule(chat.web.configureDependencies(InMemoryGuestIdentityRepository())) }
 
         val response = client.post("/api/auth/guest") {
             header(HttpHeaders.ContentType, ContentType.Application.Json.toString())

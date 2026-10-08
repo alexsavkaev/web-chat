@@ -13,7 +13,7 @@ import kotlin.test.assertTrue
 class HealthRouteTest {
     @Test
     fun `health route reports service is ready`() = testApplication {
-        application { configureHttpModule(InMemoryGuestIdentityRepository()) }
+        application { configureHttpModule(configureDependencies(InMemoryGuestIdentityRepository())) }
 
         val response = client.get("/health")
 

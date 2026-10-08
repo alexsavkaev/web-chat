@@ -13,16 +13,16 @@ import io.ktor.server.routing.routing
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-fun Application.module() = configureHttpModule(configureDependencies().guestIdentityRepository)
+fun Application.module() {
+    val dependencies = configureDependencies()
+    configureHttpModule(dependencies)
+}
 
-fun Application.configureHttpModule(
-    guestIdentityRepository: GuestIdentityRepository
-) {
+fun Application.configureHttpModule(dependencies: ApplicationDependencies) {
     install(CallLogging)
     install(ContentNegotiation) {
         json(Json { ignoreUnknownKeys = true })
     }
-    val dependencies = configureDependencies(guestIdentityRepository)
     routing {
         get("/health") {
             call.respond(mapOf("status" to "ok"))

@@ -41,16 +41,38 @@ class PostgresGuestIdentityRepositoryTest {
     }
 
     @Test
-    fun `migration creates guest identities table`() {
-        migrateDatabase(dataSource)
+    fun `migration creates schema and guest identities table on a clean database`() {
+        val schemaName = "webchat_test_${UUID.randomUUID().toString().replace("-", "")}"
+        val schemaDataSource = PGSimpleDataSource().apply {
+            setURL(System.getenv("DATABASE_URL") ?: "jdbc:postgresql://localhost:5432/chatdb_test")
+            user = System.getenv("DATABASE_USER") ?: "chat"
+            password = System.getenv("DATABASE_PASSWORD") ?: "chat"
+        }
+        schemaDataSource.connection.use { connection ->
+            connection.createStatement().use { it.execute("CREATE DATABASE \"$schemaName\"") }
+        }
 
-        val exists = dataSource.connection.use { connection ->
-            connection.prepareStatement("SELECT to_regclass('webchat.guest_identities') IS NOT NULL").use { statement ->
-                statement.executeQuery().use { result ->
-                    result.next() && result.getBoolean(1)
+        try {
+            val cleanDataSource = PGSimpleDataSource().apply {
+                setURL(System.getenv("DATABASE_URL")?.replace("chatdb_test", schemaName)
+                    ?: "jdbc:postgresql://localhost:5432/$schemaName")
+                user = System.getenv("DATABASE_USER") ?: "chat"
+                password = System.getenv("DATABASE_PASSWORD") ?: "chat"
+            }
+            migrateDatabase(cleanDataSource)
+
+            val exists = cleanDataSource.connection.use { connection ->
+                connection.prepareStatement("SELECT to_regclass('webchat.guest_identities') IS NOT NULL").use { statement ->
+                    statement.executeQuery().use { result -> result.next() && result.getBoolean(1) }
+                }
+            }
+            assertEquals(true, exists)
+        } finally {
+            schemaDataSource.connection.use { connection ->
+                connection.createStatement().use { statement ->
+                    statement.execute("DROP DATABASE IF EXISTS \"$schemaName\"")
                 }
             }
         }
-        assertEquals(true, exists)
     }
 }
