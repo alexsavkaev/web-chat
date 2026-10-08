@@ -4,8 +4,15 @@ import chat.web.auth.GuestIdentityRepository
 import chat.web.auth.GuestIdentityService
 import chat.web.database.migrateDatabase
 import chat.web.database.PostgresGuestIdentityRepository
+import chat.web.database.PostgresIdentityRepository
+import chat.web.database.PostgresSessionRepository
 import chat.web.database.createDataSource
 import chat.web.database.databaseSettings
+import chat.web.auth.AuthService
+import chat.web.auth.Authorization
+import chat.web.auth.IdentityRepository
+import chat.web.auth.InMemoryIdentityRepository
+import chat.web.auth.InMemorySessionRepository
 import chat.web.database.PostgresMessageRepository
 import chat.web.messages.InMemoryMessageService
 import chat.web.messages.MessageContract
@@ -19,27 +26,36 @@ data class ApplicationDependencies(
     val guestIdentityRepository: GuestIdentityRepository,
     val guestIdentityService: GuestIdentityService,
     val roomService: RoomContract,
-    val messageService: MessageContract
+    val messageService: MessageContract,
+    val authService: AuthService,
+    val authorization: Authorization
 )
 
 fun configureDependencies(
     guestIdentityRepository: GuestIdentityRepository? = null,
-    environment: Map<String, String> = System.getenv()
+    environment: Map<String, String> = System.getenv(),
+    identityRepository: IdentityRepository? = null
 ): ApplicationDependencies {
-    val dataSource = if (guestIdentityRepository == null) {
+    val dataSource = if (guestIdentityRepository == null && identityRepository == null) {
         val settings = databaseSettings(environment)
         createDataSource(settings)
     } else null
-    if (dataSource != null) {
+    val repository = guestIdentityRepository ?: run {
+        checkNotNull(dataSource)
         migrateDatabase(dataSource)
+        PostgresGuestIdentityRepository(dataSource)
     }
-    val repository = guestIdentityRepository ?: PostgresGuestIdentityRepository(dataSource!!)
     val roomService = if (dataSource == null) InMemoryRoomService() else PostgresRoomService(dataSource)
+    val durableIdentity = identityRepository ?: dataSource?.let { PostgresIdentityRepository(it) } ?: InMemoryIdentityRepository()
+    val sessions = dataSource?.let { PostgresSessionRepository(it) } ?: InMemorySessionRepository()
+    val auth = AuthService(durableIdentity, sessions)
     return ApplicationDependencies(
         guestIdentityRepository = repository,
         guestIdentityService = GuestIdentityService(repository),
         roomService = roomService,
         messageService = if (dataSource == null) InMemoryMessageService(roomService)
-        else PostgresMessageService(roomService, PostgresMessageRepository(dataSource))
+        else PostgresMessageService(roomService, PostgresMessageRepository(dataSource)),
+        authService = auth,
+        authorization = Authorization(auth)
     )
 }
