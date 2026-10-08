@@ -1,5 +1,7 @@
 package chat.web
 
+import chat.web.configureHttpModule
+import chat.web.auth.InMemoryGuestIdentityRepository
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
@@ -11,7 +13,7 @@ import kotlin.test.assertTrue
 class HealthRouteTest {
     @Test
     fun `health route reports service is ready`() = testApplication {
-        application { module() }
+        application { configureHttpModule(configureDependencies(InMemoryGuestIdentityRepository())) }
 
         val response = client.get("/health")
 

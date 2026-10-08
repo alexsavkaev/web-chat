@@ -38,7 +38,10 @@ This compiles the backend and runs its unit tests. PostgreSQL integration tests 
 
 ## Architecture notes
 
-The auth module exposes `GuestIdentityRepository` as its persistence boundary. The current `InMemoryGuestIdentityRepository` is deliberately a temporary adapter for the bootstrap slice; PostgreSQL persistence must be introduced behind this contract in the foundation work.
+- PostgreSQL persistence uses Flyway migrations in `backend/src/main/resources/db/migration`.
+- Configure the connection with `DATABASE_URL`, `DATABASE_USER`, `DATABASE_PASSWORD`; defaults target local `webchat` DB.
+- Guest identities are persisted through auth's `GuestIdentityRepository`; `InMemoryGuestIdentityRepository` is an explicit temporary/test adapter only.
+- `./gradlew :backend:test` runs the fast tests. `./gradlew :backend:integrationTest` requires PostgreSQL; configure credentials with the environment variables above.
 
 The `frontend/` workspace will contain the Vite/Web Components application. The initial client will be bootstrapped after persistence and API contracts are established.
 

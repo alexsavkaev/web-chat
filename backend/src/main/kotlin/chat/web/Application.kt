@@ -1,6 +1,7 @@
 package chat.web
 
 import chat.web.auth.guestAuthRoutes
+import chat.web.auth.GuestIdentityRepository
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.plugins.calllogging.CallLogging
@@ -13,11 +14,15 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 fun Application.module() {
+    val dependencies = configureDependencies()
+    configureHttpModule(dependencies)
+}
+
+fun Application.configureHttpModule(dependencies: ApplicationDependencies) {
     install(CallLogging)
     install(ContentNegotiation) {
         json(Json { ignoreUnknownKeys = true })
     }
-    val dependencies = configureDependencies()
     routing {
         get("/health") {
             call.respond(mapOf("status" to "ok"))

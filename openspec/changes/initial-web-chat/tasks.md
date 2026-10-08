@@ -2,9 +2,9 @@
 
 ## 1. Foundation
 
-- [ ] 1.1 Create the Ktor modular-monolith project structure.
-- [ ] 1.2 Configure PostgreSQL, migrations, configuration and local development.
-- [ ] 1.3 Establish explicit module contracts and shared test infrastructure.
+- [x] 1.1 Create the Ktor modular-monolith project structure.
+- [x] 1.2 Configure PostgreSQL, migrations, configuration and local development.
+- [x] 1.3 Establish explicit module contracts and shared test infrastructure.
 - [ ] 1.4 Create baseline HTTP/WebSocket API contract conventions.
 
 ## 2. Identity, users and permissions
