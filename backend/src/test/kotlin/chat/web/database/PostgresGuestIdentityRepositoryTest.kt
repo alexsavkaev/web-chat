@@ -29,7 +29,7 @@ class PostgresGuestIdentityRepositoryTest {
                 statement.executeQuery("SELECT to_regclass('webchat.guest_identities') IS NOT NULL").use { result ->
                     assertTrue(result.next() && result.getBoolean(1))
                 }
-                statement.executeQuery("SELECT COUNT(*) FROM webchat.databasechangeloglock").use { result ->
+                statement.executeQuery("SELECT COUNT(*) FROM webchat.DATABASECHANGELOGLOCK").use { result ->
                     assertTrue(result.next() && result.getInt(1) == 1)
                 }
             }
