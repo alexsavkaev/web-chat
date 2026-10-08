@@ -2,12 +2,12 @@ package chat.web.database
 
 import chat.web.auth.GuestIdentity
 import chat.web.auth.GuestIdentityRepository
-import java.sql.Connection
+import javax.sql.DataSource
 
 class PostgresGuestIdentityRepository(
-    private val connectionFactory: () -> Connection
+    private val dataSource: DataSource
 ) : GuestIdentityRepository {
-    override fun save(identity: GuestIdentity): GuestIdentity = connectionFactory().use { connection ->
+    override fun save(identity: GuestIdentity): GuestIdentity = dataSource.connection.use { connection ->
         connection.prepareStatement(
             "INSERT INTO webchat.guest_identities (id, display_name) VALUES (?, ?)"
         ).use { statement ->

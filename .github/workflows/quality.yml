@@ -27,6 +27,8 @@ jobs:
           gradle-version: '9.6.0'
       - name: Run backend build and tests
         run: gradle :backend:build --no-daemon
+      - name: Run PostgreSQL integration tests with Testcontainers
+        run: gradle :backend:integrationTest --no-daemon
 
   frontend:
     name: Frontend build and tests
