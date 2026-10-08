@@ -15,5 +15,3 @@ databaseChangeLog:
       rollback:
         - sql:
             sql: "DROP TABLE IF EXISTS webchat.guest_identities"
-        - sql:
-            sql: "DROP SCHEMA IF EXISTS webchat"
