@@ -28,11 +28,13 @@ The server listens on `http://localhost:8080` (override with `PORT`).
 - `GET /health` — health probe
 - `POST /api/auth/guest` with `{"displayName":"Fox"}` — create an anonymous guest identity
 
-Run the backend tests with:
+Run the backend quality checks with:
 
 ```sh
-./gradlew :backend:test
+./gradlew :backend:build
 ```
+
+This compiles the backend and runs its unit tests. PostgreSQL integration tests are a separate task (`./gradlew :backend:integrationTest`) and are not part of the baseline CI gate. The current frontend workspace is a placeholder; when `frontend/package.json` and a supported lockfile are added, CI will install dependencies reproducibly and run its build and tests. Run the same checks locally before opening a pull request.
 
 ## Architecture notes
 
