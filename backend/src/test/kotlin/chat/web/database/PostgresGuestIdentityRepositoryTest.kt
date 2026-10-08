@@ -43,8 +43,12 @@ class PostgresGuestIdentityRepositoryTest {
     @Test
     fun `migration creates schema and guest identities table on a clean database`() {
         val schemaName = "webchat_test_${UUID.randomUUID().toString().replace("-", "")}"
+        val baseUrl = System.getenv("DATABASE_URL") ?: "jdbc:postgresql://localhost:5432/chatdb_test"
+        val baseUri = java.net.URI.create(baseUrl.removePrefix("jdbc:"))
+        val hostPort = if (baseUri.port >= 0) "${baseUri.host}:${baseUri.port}" else baseUri.host
+        val adminUrl = "jdbc:postgresql://$hostPort/postgres${baseUri.rawQuery?.let { "?$it" } ?: ""}"
         val schemaDataSource = PGSimpleDataSource().apply {
-            setURL(System.getenv("DATABASE_URL") ?: "jdbc:postgresql://localhost:5432/chatdb_test")
+            setURL(adminUrl)
             user = System.getenv("DATABASE_USER") ?: "chat"
             password = System.getenv("DATABASE_PASSWORD") ?: "chat"
         }
