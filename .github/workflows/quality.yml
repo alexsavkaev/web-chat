@@ -21,10 +21,12 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - name: Set up Gradle
+      - name: Install Gradle 9.6.0
         uses: gradle/actions/setup-gradle@v4
-      - name: Build and test backend
-        run: bash gradlew :backend:build --no-daemon
+        with:
+          gradle-version: '9.6.0'
+      - name: Run backend build and tests
+        run: gradle :backend:build --no-daemon
 
   frontend:
     name: Frontend build and tests
