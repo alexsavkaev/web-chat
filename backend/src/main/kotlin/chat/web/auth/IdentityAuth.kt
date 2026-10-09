@@ -25,6 +25,7 @@ interface IdentityRepository {
     fun findById(id: String): RegisteredIdentity?
     fun updateProfile(id: String, displayName: String): RegisteredIdentity?
 }
+class DuplicateEmailException : RuntimeException("Email is already registered")
 interface SessionRepository {
     fun save(session: AuthSession)
     fun findByTokenHash(tokenHash: String): AuthSession?
@@ -76,7 +77,10 @@ class AuthService(
     fun register(email: String, displayName: String, password: String): RegisteredIdentity? {
         val normalized = email.trim().lowercase()
         if (!EMAIL_REGEX.matches(normalized) || displayName.trim().isEmpty() || displayName.trim().length > 64 || password.length < 8 || identities.findByEmail(normalized) != null) return null
-        return RegisteredIdentity(UUID.randomUUID().toString(), normalized, displayName.trim()).also { identities.save(it, hasher.hash(password)) }
+        return RegisteredIdentity(UUID.randomUUID().toString(), normalized, displayName.trim()).also {
+            try { identities.save(it, hasher.hash(password)) }
+            catch (_: DuplicateEmailException) { return null }
+        }
     }
     fun authenticate(email: String, password: String): AuthenticatedIdentity? {
         val identity = identities.findByEmail(email.trim().lowercase()) ?: return null

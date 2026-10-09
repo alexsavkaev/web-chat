@@ -30,6 +30,7 @@ fun Application.configureHttpModule(dependencies: ApplicationDependencies, cooki
         }
         guestAuthRoutes(dependencies.guestIdentityService)
         identityAuthRoutes(dependencies.authService, dependencies.authorization, cookiePolicy)
+
     }
 }
 

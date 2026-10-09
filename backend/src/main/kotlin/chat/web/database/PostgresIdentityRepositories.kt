@@ -1,6 +1,7 @@
 package chat.web.database
 
 import chat.web.auth.AuthSession
+import chat.web.auth.DuplicateEmailException
 import chat.web.auth.IdentityRepository
 import chat.web.auth.RegisteredIdentity
 import chat.web.auth.Role
@@ -26,7 +27,12 @@ class PostgresIdentityRepository(private val dataSource: DataSource) : IdentityR
                 statement.setString(3, identity.displayName)
                 statement.setString(4, passwordHash)
                 statement.setString(5, identity.role.name)
-                statement.executeUpdate()
+                try {
+                    statement.executeUpdate()
+                } catch (failure: java.sql.SQLException) {
+                    if (failure.sqlState == "23505") throw DuplicateEmailException()
+                    throw failure
+                }
             }
         }
     }
