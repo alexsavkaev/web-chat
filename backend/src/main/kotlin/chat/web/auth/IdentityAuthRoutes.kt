@@ -30,7 +30,7 @@ fun Route.identityAuthRoutes(auth: AuthService, authz: Authorization, cookiePoli
     }
     fun issueCsrf(call: io.ktor.server.application.ApplicationCall) {
         val token = java.util.UUID.randomUUID().toString()
-        call.response.cookies.append(Cookie(CSRF_COOKIE, token, maxAge = cookiePolicy.maxAgeSeconds, httpOnly = false, secure = cookiePolicy.secure, extensions = mapOf("SameSite" to cookiePolicy.sameSite)))
+        call.response.cookies.append(Cookie(CSRF_COOKIE, token, path = "/", maxAge = cookiePolicy.maxAgeSeconds, httpOnly = false, secure = cookiePolicy.secure, extensions = mapOf("SameSite" to cookiePolicy.sameSite)))
     }
     post("/api/auth/register") {
         val request = runCatching { call.receive<RegisterRequest>() }.getOrNull()
@@ -53,8 +53,8 @@ fun Route.identityAuthRoutes(auth: AuthService, authz: Authorization, cookiePoli
         val token = call.request.cookies[SESSION_COOKIE]
         if (token != null && !csrfValid(call)) { call.respond(HttpStatusCode.Forbidden, ErrorResponse("CSRF validation failed")); return@post }
         auth.logout(token)
-        call.response.cookies.append(Cookie(SESSION_COOKIE, "", maxAge = 0, httpOnly = true, secure = cookiePolicy.secure, extensions = mapOf("SameSite" to cookiePolicy.sameSite)))
-        call.response.cookies.append(Cookie(CSRF_COOKIE, "", maxAge = 0, httpOnly = false, secure = cookiePolicy.secure, extensions = mapOf("SameSite" to cookiePolicy.sameSite)))
+        call.response.cookies.append(Cookie(SESSION_COOKIE, "", path = "/", maxAge = 0, httpOnly = true, secure = cookiePolicy.secure, extensions = mapOf("SameSite" to cookiePolicy.sameSite)))
+        call.response.cookies.append(Cookie(CSRF_COOKIE, "", path = "/", maxAge = 0, httpOnly = false, secure = cookiePolicy.secure, extensions = mapOf("SameSite" to cookiePolicy.sameSite)))
         call.respond(HttpStatusCode.NoContent)
     }
     get("/api/auth/me") {

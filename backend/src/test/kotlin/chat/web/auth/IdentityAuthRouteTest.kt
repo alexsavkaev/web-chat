@@ -31,6 +31,7 @@ class IdentityAuthRouteTest {
         assertContains(cookies, "HttpOnly")
         assertContains(cookies, "Secure")
         assertContains(cookies, "SameSite=Strict")
+        assertContains(cookies, "Path=/")
         assertContains(cookies, "webchat_csrf=")
     }
 

@@ -116,4 +116,4 @@ class Authorization(private val auth: AuthService) {
 
 const val SESSION_COOKIE = "webchat_session"
 const val CSRF_COOKIE = "webchat_csrf"
-fun sessionCookie(token: String, policy: SessionCookiePolicy) = Cookie(SESSION_COOKIE, token, maxAge = policy.maxAgeSeconds, httpOnly = true, secure = policy.secure, extensions = mapOf("SameSite" to policy.sameSite), encoding = CookieEncoding.RAW)
+fun sessionCookie(token: String, policy: SessionCookiePolicy) = Cookie(SESSION_COOKIE, token, path = "/", maxAge = policy.maxAgeSeconds, httpOnly = true, secure = policy.secure, extensions = mapOf("SameSite" to policy.sameSite), encoding = CookieEncoding.RAW)
