@@ -21,6 +21,11 @@ interface MessageContract {
     fun history(roomId: String, requesterId: String, beforeSequence: Long? = null, limit: Int = 50): List<ChatMessage>
 }
 
+interface MessageRepository {
+    fun save(message: ChatMessage): ChatMessage
+    fun history(roomId: String, beforeSequence: Long?, limit: Int): List<ChatMessage>
+}
+
 class InMemoryMessageService(private val rooms: RoomContract) : MessageContract {
     private val messages = linkedMapOf<String, MutableList<ChatMessage>>()
     private val lock = Any()

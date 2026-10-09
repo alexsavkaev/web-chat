@@ -16,6 +16,7 @@ interface RoomContract {
     fun leave(roomId: String, userId: String): Boolean
     fun members(roomId: String): List<RoomMember>
     fun isMember(roomId: String, userId: String): Boolean
+    fun appointModerator(roomId: String, ownerId: String, userId: String): Boolean
 }
 
 class InMemoryRoomService : RoomContract {
@@ -58,6 +59,14 @@ class InMemoryRoomService : RoomContract {
     override fun isMember(roomId: String, userId: String): Boolean = synchronized(lock) {
         require(userId.isNotBlank()) { "User is required" }
         rooms[roomId]?.members?.containsKey(userId) == true
+    }
+
+    override fun appointModerator(roomId: String, ownerId: String, userId: String): Boolean = synchronized(lock) {
+        require(ownerId.isNotBlank() && userId.isNotBlank()) { "Users are required" }
+        val record = rooms[roomId] ?: return false
+        if (record.room.ownerId != ownerId || userId == ownerId || !record.members.containsKey(userId)) return false
+        record.members[userId] = RoomRole.MODERATOR
+        true
     }
 
     private data class RoomRecord(val room: Room, val password: String?, val members: LinkedHashMap<String, RoomRole>)
