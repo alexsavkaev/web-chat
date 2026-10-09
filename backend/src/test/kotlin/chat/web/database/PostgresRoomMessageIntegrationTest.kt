@@ -1,13 +1,11 @@
 package chat.web.database
 
-import chat.web.auth.RegisteredIdentity
-import chat.web.auth.Role
-import chat.web.messages.PostgresMessageService
+import chat.web.configureDependencies
 import chat.web.messages.SendMessageCommand
 import chat.web.rooms.CreateRoomCommand
 import chat.web.rooms.PostgresRoomService
+
 import java.util.UUID
-import javax.sql.DataSource
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -26,24 +24,27 @@ class PostgresRoomMessageIntegrationTest {
     fun `persists room membership and message history with foreign keys`() {
         val source = dataSource()
         migrateDatabase(source)
-        val identities = PostgresIdentityRepository(source)
-        val owner = RegisteredIdentity(UUID.randomUUID().toString(), "owner@example.com", "Owner", Role.USER)
-        val guest = RegisteredIdentity(UUID.randomUUID().toString(), "guest@example.com", "Guest", Role.USER)
-        identities.save(owner, "hash")
-        identities.save(guest, "hash")
+        val dependencies = configureDependencies(dataSourceOverride = source)
+        val owner = dependencies.authService.register("owner@example.com", "Owner", "owner-password")
+        val guestSession = dependencies.authService.register("guest@example.com", "Guest", "guest-password")
+        assertNotNull(owner)
+        assertNotNull(guestSession)
+        val authenticated = dependencies.authService.authenticate("guest@example.com", "guest-password")
+        assertNotNull(authenticated)
+        val resolved = dependencies.authorization.authenticate(authenticated.rawToken)
+        assertNotNull(resolved)
+        assertEquals(guestSession.id, resolved.identity.id)
 
-        val rooms = PostgresRoomService(source)
-        val room = rooms.create(CreateRoomCommand("Durable room", owner.id))
-        val joined = rooms.join(room.id, guest.id)
+        val room = dependencies.roomService.create(CreateRoomCommand("Durable room", owner.id))
+        val joined = dependencies.roomService.join(room.id, resolved.identity.id)
         assertNotNull(joined)
-        assertTrue(rooms.isMember(room.id, guest.id))
+        assertTrue(dependencies.roomService.isMember(room.id, resolved.identity.id))
 
-        val messages = PostgresMessageService(rooms, PostgresMessageRepository(source))
-        val sent = messages.send(SendMessageCommand(room.id, guest.id, "Persisted message"))
+        val sent = dependencies.messageService.send(SendMessageCommand(room.id, resolved.identity.id, "Persisted message"))
         assertNotNull(sent)
         assertTrue(sent.sequence > 0)
 
-        val history = messages.history(room.id, guest.id)
+        val history = dependencies.messageService.history(room.id, resolved.identity.id)
         assertEquals(listOf("Persisted message"), history.map { it.body })
         assertEquals(sent.id, history.single().id)
 

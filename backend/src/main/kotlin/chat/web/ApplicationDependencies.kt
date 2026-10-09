@@ -34,16 +34,17 @@ data class ApplicationDependencies(
 fun configureDependencies(
     guestIdentityRepository: GuestIdentityRepository? = null,
     environment: Map<String, String> = System.getenv(),
-    identityRepository: IdentityRepository? = null
+    identityRepository: IdentityRepository? = null,
+    dataSourceOverride: javax.sql.DataSource? = null
 ): ApplicationDependencies {
-    val dataSource = if (guestIdentityRepository == null && identityRepository == null) {
+    val dataSource = dataSourceOverride ?: if (guestIdentityRepository == null && identityRepository == null) {
         val settings = databaseSettings(environment)
         createDataSource(settings)
     } else null
     val repository = guestIdentityRepository ?: run {
-        checkNotNull(dataSource)
-        migrateDatabase(dataSource)
-        PostgresGuestIdentityRepository(dataSource)
+        val source = checkNotNull(dataSource)
+        migrateDatabase(source)
+        PostgresGuestIdentityRepository(source)
     }
     val roomService = if (dataSource == null) InMemoryRoomService() else PostgresRoomService(dataSource)
     val durableIdentity = identityRepository ?: dataSource?.let { PostgresIdentityRepository(it) } ?: InMemoryIdentityRepository()
