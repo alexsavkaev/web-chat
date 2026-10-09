@@ -26,15 +26,17 @@ class InMemoryRoomService : RoomContract {
         val name = command.name.trim()
         require(name.isNotEmpty() && name.length <= 100) { "Room name must be 1-100 characters" }
         require(command.ownerId.isNotBlank()) { "Owner is required" }
+        val password = command.password?.takeIf { it.isNotBlank() }
         val id = UUID.randomUUID().toString()
-        val room = Room(id, name, command.ownerId, !command.password.isNullOrEmpty())
-        rooms[id] = RoomRecord(room, command.password, linkedMapOf(command.ownerId to RoomRole.OWNER))
+        val room = Room(id, name, command.ownerId, password != null)
+        rooms[id] = RoomRecord(room, password, linkedMapOf(command.ownerId to RoomRole.OWNER))
         room
     }
 
     override fun discover(): List<Room> = synchronized(lock) { rooms.values.map { it.room } }
 
     override fun join(roomId: String, userId: String, password: String?): RoomMember? = synchronized(lock) {
+        require(userId.isNotBlank()) { "User is required" }
         val record = rooms[roomId] ?: return null
         if (record.password != null && record.password != password) return null
         val role = record.members[userId] ?: RoomRole.MEMBER
@@ -43,6 +45,7 @@ class InMemoryRoomService : RoomContract {
     }
 
     override fun leave(roomId: String, userId: String): Boolean = synchronized(lock) {
+        require(userId.isNotBlank()) { "User is required" }
         val record = rooms[roomId] ?: return false
         if (record.room.ownerId == userId) return false
         record.members.remove(userId) != null
@@ -53,6 +56,7 @@ class InMemoryRoomService : RoomContract {
     }
 
     override fun isMember(roomId: String, userId: String): Boolean = synchronized(lock) {
+        require(userId.isNotBlank()) { "User is required" }
         rooms[roomId]?.members?.containsKey(userId) == true
     }
 

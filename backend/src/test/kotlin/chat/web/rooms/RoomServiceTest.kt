@@ -5,6 +5,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 class RoomServiceTest {
     @Test
@@ -23,5 +25,27 @@ class RoomServiceTest {
         val service = InMemoryRoomService()
         val room = service.create(CreateRoomCommand("Main", "owner"))
         assertFalse(service.leave(room.id, "owner"))
+    }
+
+    @Test
+    fun `blank password creates a public room`() {
+        val service = InMemoryRoomService()
+        val room = service.create(CreateRoomCommand("Main", "owner", "   "))
+
+        assertFalse(room.passwordProtected)
+        assertNotNull(service.join(room.id, "guest"))
+    }
+
+    @Test
+    fun `room and member inputs are validated`() {
+        val service = InMemoryRoomService()
+        assertFailsWith<IllegalArgumentException> { service.create(CreateRoomCommand(" ", "owner")) }
+        assertFailsWith<IllegalArgumentException> { service.create(CreateRoomCommand("Main", " ")) }
+        val room = service.create(CreateRoomCommand("Main", "owner"))
+        assertNull(service.join("missing", "guest"))
+        assertFailsWith<IllegalArgumentException> { service.join(room.id, " ") }
+        assertFailsWith<IllegalArgumentException> { service.leave(room.id, " ") }
+        assertFailsWith<IllegalArgumentException> { service.isMember(room.id, " ") }
+        assertTrue(service.isMember(room.id, "owner"))
     }
 }
