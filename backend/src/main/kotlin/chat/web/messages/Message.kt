@@ -4,7 +4,7 @@ import chat.web.rooms.RoomContract
 import java.time.Instant
 import java.util.UUID
 
-/** Durable room-message contract. Access checks are performed before persistence. */
+/** In-memory room-message contract. Access checks are performed before persistence. */
 data class ChatMessage(
     val id: String,
     val roomId: String,
@@ -27,6 +27,7 @@ class InMemoryMessageService(private val rooms: RoomContract) : MessageContract 
     private var nextSequence = 1L
 
     override fun send(command: SendMessageCommand): ChatMessage? = synchronized(lock) {
+        if (command.authorId.isBlank()) return null
         if (!rooms.isMember(command.roomId, command.authorId)) return null
         val body = command.body.trim()
         if (body.isEmpty() || body.length > 4000) return null
@@ -44,6 +45,7 @@ class InMemoryMessageService(private val rooms: RoomContract) : MessageContract 
         beforeSequence: Long?,
         limit: Int
     ): List<ChatMessage> = synchronized(lock) {
+        if (requesterId.isBlank()) return emptyList()
         if (!rooms.isMember(roomId, requesterId) || limit !in 1..100) return emptyList()
         messages[roomId].orEmpty()
             .asSequence()
