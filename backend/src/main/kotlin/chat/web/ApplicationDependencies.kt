@@ -10,6 +10,7 @@ import chat.web.database.PostgresMessageRepository
 import chat.web.messages.InMemoryMessageService
 import chat.web.messages.MessageContract
 import chat.web.messages.PostgresMessageService
+import chat.web.rooms.PostgresRoomService
 import chat.web.rooms.InMemoryRoomService
 import chat.web.rooms.RoomContract
 
@@ -33,7 +34,7 @@ fun configureDependencies(
         migrateDatabase(dataSource)
     }
     val repository = guestIdentityRepository ?: PostgresGuestIdentityRepository(dataSource!!)
-    val roomService = InMemoryRoomService()
+    val roomService = if (dataSource == null) InMemoryRoomService() else PostgresRoomService(dataSource)
     return ApplicationDependencies(
         guestIdentityRepository = repository,
         guestIdentityService = GuestIdentityService(repository),
