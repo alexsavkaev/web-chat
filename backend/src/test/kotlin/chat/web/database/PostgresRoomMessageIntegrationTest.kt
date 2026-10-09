@@ -1,6 +1,7 @@
 package chat.web.database
 
-import chat.web.auth.GuestIdentity
+import chat.web.auth.RegisteredIdentity
+import chat.web.auth.Role
 import chat.web.messages.PostgresMessageService
 import chat.web.messages.SendMessageCommand
 import chat.web.rooms.CreateRoomCommand
@@ -25,11 +26,11 @@ class PostgresRoomMessageIntegrationTest {
     fun `persists room membership and message history with foreign keys`() {
         val source = dataSource()
         migrateDatabase(source)
-        val identities = PostgresGuestIdentityRepository(source)
-        val owner = GuestIdentity(UUID.randomUUID().toString(), "Owner")
-        val guest = GuestIdentity(UUID.randomUUID().toString(), "Guest")
-        identities.save(owner)
-        identities.save(guest)
+        val identities = PostgresIdentityRepository(source)
+        val owner = RegisteredIdentity(UUID.randomUUID().toString(), "owner@example.com", "Owner", Role.USER)
+        val guest = RegisteredIdentity(UUID.randomUUID().toString(), "guest@example.com", "Guest", Role.USER)
+        identities.save(owner, "hash")
+        identities.save(guest, "hash")
 
         val rooms = PostgresRoomService(source)
         val room = rooms.create(CreateRoomCommand("Durable room", owner.id))

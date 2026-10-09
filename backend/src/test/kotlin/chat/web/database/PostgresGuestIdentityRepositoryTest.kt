@@ -65,6 +65,17 @@ class PostgresGuestIdentityRepositoryTest {
         assertEquals("TestGuest", persistedName)
     }
 
+    @Test
+    fun `registered identity duplicate email is reported as a controlled error`() {
+        val source = dataSource()
+        migrateDatabase(source)
+        val repository = PostgresIdentityRepository(source)
+        repository.save(chat.web.auth.RegisteredIdentity(UUID.randomUUID().toString(), "same@example.com", "First"), "hash")
+        kotlin.test.assertFailsWith<chat.web.auth.DuplicateEmailException> {
+            repository.save(chat.web.auth.RegisteredIdentity(UUID.randomUUID().toString(), "same@example.com", "Second"), "hash")
+        }
+    }
+
     private fun countChangesets(source: PGSimpleDataSource): Int = source.connection.use { connection ->
         connection.createStatement().use { statement ->
             statement.executeQuery("SELECT COUNT(*) FROM webchat.DATABASECHANGELOG WHERE ID = '1-create-guest-identities'").use { result ->
