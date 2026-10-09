@@ -15,3 +15,44 @@ databaseChangeLog:
       rollback:
         - sql:
             sql: "DROP TABLE IF EXISTS webchat.guest_identities"
+  - changeSet:
+      id: 2-create-rooms-memberships-messages
+      author: web-chat
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE webchat.rooms (
+                id UUID PRIMARY KEY,
+                name VARCHAR(100) NOT NULL,
+                owner_id UUID NOT NULL REFERENCES webchat.guest_identities(id),
+                password_hash VARCHAR(255),
+                created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+              );
+        - sql:
+            sql: |
+              CREATE TABLE webchat.room_members (
+                room_id UUID NOT NULL REFERENCES webchat.rooms(id) ON DELETE CASCADE,
+                user_id UUID NOT NULL REFERENCES webchat.guest_identities(id),
+                role VARCHAR(16) NOT NULL CHECK (role IN ('OWNER', 'MODERATOR', 'MEMBER')),
+                joined_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (room_id, user_id)
+              );
+        - sql:
+            sql: |
+              CREATE TABLE webchat.messages (
+                id UUID PRIMARY KEY,
+                room_id UUID NOT NULL REFERENCES webchat.rooms(id) ON DELETE CASCADE,
+                author_id UUID NOT NULL REFERENCES webchat.guest_identities(id),
+                body VARCHAR(4000) NOT NULL CHECK (length(trim(body)) > 0),
+                sequence BIGSERIAL NOT NULL UNIQUE,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+              );
+        - sql:
+            sql: "CREATE INDEX messages_room_sequence_idx ON webchat.messages(room_id, sequence DESC)"
+      rollback:
+        - sql:
+            sql: "DROP TABLE IF EXISTS webchat.messages"
+        - sql:
+            sql: "DROP TABLE IF EXISTS webchat.room_members"
+        - sql:
+            sql: "DROP TABLE IF EXISTS webchat.rooms"
