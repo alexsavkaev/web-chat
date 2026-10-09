@@ -48,4 +48,17 @@ class RoomServiceTest {
         assertFailsWith<IllegalArgumentException> { service.isMember(room.id, " ") }
         assertTrue(service.isMember(room.id, "owner"))
     }
+
+    @Test
+    fun `only owner can appoint an existing member as moderator`() {
+        val service = InMemoryRoomService()
+        val room = service.create(CreateRoomCommand("Main", "owner"))
+        service.join(room.id, "member")
+
+        assertFalse(service.appointModerator(room.id, "member", "member"))
+        assertTrue(service.appointModerator(room.id, "owner", "member"))
+        assertEquals(RoomRole.MODERATOR, service.members(room.id).single { it.userId == "member" }.role)
+        assertFalse(service.appointModerator(room.id, "owner", "owner"))
+        assertFalse(service.appointModerator(room.id, "owner", "missing"))
+    }
 }
